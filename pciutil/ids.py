@@ -13,6 +13,9 @@ Changelog:
 
 '''
 
+import gzip
+import os
+
 from collections import (
     defaultdict,
 )
@@ -42,12 +45,21 @@ class PciIds(object):
 
     @classmethod
     def load_from_file(cls, filepath=PCI_IDS_PATH):
-        lines = open(filepath).readlines()
+        open_file = open
+        if filepath.endswith('.gz'):
+            open_file = gzip.open
+        lines = open_file(filepath, 'rt').readlines()
         return cls(lines=lines)
 
     @classmethod
-    def load_from_system(cls):
-        return cls.load_from_file()
+    def smart_load(cls):
+        for path in (
+            os.path.abspath(os.path.join(__file__, '../data/pci.ids.gz')),
+            '/usr/share/misc/pci.ids',
+            '/usr/share/hwdata/pci.ids',
+        ):
+            if os.path.exists(path):
+                return cls.load_from_file(filepath=path)
 
     def __init__(self, lines):
         self.mapping = tree()
